@@ -170,6 +170,7 @@ impl Grid {
         let mut new_row = Row::new(size.width);
 
         let mut j = 0;
+        let start = i;
         while line.len() > i && j + line[i].width() <= size.width {
           if let Some(target) = new_row.get_mut(j) {
             *target = line[i].clone();
@@ -180,6 +181,12 @@ impl Grid {
         }
 
         if line.len() > i {
+          if i == start {
+            if let Some(target) = new_row.get_mut(j) {
+              *target = line[i].clone();
+            }
+            i += 1;
+          }
           new_row.wrap(true);
           acc.push_back(new_row);
         } else {
@@ -633,6 +640,31 @@ impl Grid {
       .rows
       .get(self.row0() + pos.row as usize)
       .is_some_and(|r| r.is_wide_continuation(pos.col))
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::{Cell, Grid, Pos, Size};
+
+  #[test]
+  fn resizing_narrower_than_a_wide_cell_makes_progress() {
+    let mut grid = Grid::new(
+      Size {
+        width: 2,
+        height: 1,
+      },
+      0,
+    );
+    *grid.drawing_cell_mut(Pos { row: 0, col: 0 }).unwrap() = Cell::new("界");
+
+    grid.set_size(Size {
+      width: 1,
+      height: 1,
+    });
+
+    assert_eq!(grid.size().width, 1);
+    assert_eq!(grid.rows.len(), 1);
   }
 }
 
